@@ -10,7 +10,7 @@ from .logging_config import configure_logging
 from .metrics import LATENCY, REQUESTS, metrics_response
 from .model import predict
 
-configure_logging()
+configure_logging(settings.log_level)
 log = logging.getLogger("orchestrator")
 
 app = FastAPI(title="ML Docker Orchestrator", version="0.1.0")

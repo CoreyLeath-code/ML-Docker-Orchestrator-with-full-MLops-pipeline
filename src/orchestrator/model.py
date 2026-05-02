@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import Any
 
 import mlflow
+import pandas as pd
 
 from .config import settings
 
@@ -21,8 +22,6 @@ def load_model():
 
 def predict(features: list[dict[str, Any]]) -> list[dict[str, Any]]:
     model = load_model()
-    import pandas as pd
-
     df = pd.DataFrame(features)
     preds = model.predict(df)
     # Normalize outputs into JSONable response
