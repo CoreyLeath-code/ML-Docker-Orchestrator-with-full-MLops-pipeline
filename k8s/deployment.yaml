@@ -1,37 +1,19 @@
-# k8s/deployment.yaml
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ml-docker-orchestrator
-  labels:
-    app: ml-api
+  name: ml-orchestrator
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: ml-api
+      app: ml-orchestrator
   template:
     metadata:
       labels:
-        app: ml-api
+        app: ml-orchestrator
     spec:
       containers:
-      - name: ml-api
-        image: ml-docker-api:latest
-        ports:
-        - containerPort: 8000
-        imagePullPolicy: Never
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ml-api-service
-spec:
-  selector:
-    app: ml-api
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8000
-  type: LoadBalancer
+        - name: ml-app
+          image: yourdockerhub/ml-orchestrator:latest
+          ports:
+            - containerPort: 8000

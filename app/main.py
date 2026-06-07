@@ -27,7 +27,7 @@ class SimpleNet(nn.Module):
 
 # Load model
 model = SimpleNet(input_dim=20)
-model.load_state_dict(torch.load("model/model.pth"))
+model.load_state_dict(torch.load("model/model.pth", map_location="cpu"))
 model.eval()
 
 # Input schema using Pydantic
