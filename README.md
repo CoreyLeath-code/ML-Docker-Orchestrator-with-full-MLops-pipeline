@@ -1,79 +1,260 @@
 ML-Docker-Orchestrator with Full MLops Pipeline
 
-A containerized machine learning deployment pipeline using **PyTorch**, **Docker Compose**, **Kubernetes**, **Terraform**, **Ansible**, **Apache Kafka**, and **Snowflake**.
-https://codecov.io/gh/Trojan3877/ML-Docker-Orchestrator/branch/main/graph/badge.svg
-![Coverage](https://codecov.io/gh/Trojan3877/<REPO>/branch/main/graph/badge.svg)
-# ML Docker Orchestrator (Full MLOps Pipeline)
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestrated-326ce5)
+![MLflow](https://img.shields.io/badge/MLflow-Experiment_Tracking-0194E2)
+![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-orange)
+![CI/CD](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-success)
+![FastAPI](https://img.shields.io/badge/FastAPI-Production_API-green)
+![Terraform](https://img.shields.io/badge/Terraform-Infrastructure-623CE4)
+![MLOps](https://img.shields.io/badge/MLOps-End_to_End-critical)
 
-![CI](https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/ci.yml/badge.svg)
-![Security](https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/security.yml/badge.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-API-brightgreen.svg)
-![Docker](https://img.shields.io/badge/Docker-Containerization-blue.svg)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-Deployment-blue.svg)
-![MLflow](https://img.shields.io/badge/MLflow-Tracking%2FRegistry-orange.svg)
-![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-red.svg)
 
-A production-style ML inference orchestrator that demonstrates **end-to-end MLOps**:
-- Training with **MLflow** metrics logging + model registry
-- Serving with **FastAPI** and **structured JSON logs**
-- **Docker** container build + **Kubernetes** deployment manifests (HPA included)
-- **Prometheus** metrics endpoint (`/metrics`)
-- CI/CD + security automation (lint/test, dependency checks)
 
----
-
-## Architecture Flow
+Architecture Flow
 
 ![image](https://github.com/user-attachments/assets/d9044d80-a9d7-42f7-8957-19bd2e9e9e77)
 
 
 
-Quick Start (Local)
-Option A: Docker Compose (recommended)
-cp .env.example .env
-docker compose -f infra/docker-compose.yml up --build
+README
+ML Docker Orchestrator – Production ML Inference Platform
 
-Test:
+A production-style ML inference orchestration system demonstrating full end-to-end MLOps:
 
-curl http://localhost:8080/health
-bash scripts/smoke_test.sh
-Option B: Python (no containers)
-make setup
-make run
-Endpoints
+Model training & experiment tracking
 
-GET /health → health check
+Containerized inference
 
-POST /predict → predictions
+CI/CD automation
 
-GET /metrics → Prometheus metrics
+Kubernetes deployment
 
-Q1: What makes this “industry-grade”?
+Infrastructure as Code
 
-This repo includes the same pillars used in production ML systems: containerization, CI/CD automation, observability, security scanning, and deployable Kubernetes manifests. It demonstrates not just model training, but the operational lifecycle around ML.
+Observability & monitoring
 
-Q2: How is the model versioned and promoted?
+Scalable API serving
 
-Training logs metrics and artifacts to MLflow. The serving service loads from the MLflow Registry using models:/<name>/<stage> which mirrors real promotion workflows (Staging → Production).
+This project demonstrates how ML systems operate in real enterprise environments.
 
-Q3: How does the API stay observable in production?
+ System Architecture
+User Request
+     ↓
+FastAPI Inference Layer
+     ↓
+Input Validation (Pydantic)
+     ↓
+Inference Pipeline
+     ↓
+Model Loader (Cached)
+     ↓
+Prediction Engine
+     ↓
+Metrics (Prometheus)
+     ↓
+Structured Logging
+     ↓
+Response
 
-The service exposes Prometheus metrics at /metrics and uses structured JSON logs for easier parsing in centralized logging platforms. This enables SLO tracking and faster incident triage.
+Parallel Systems:
 
-Q4: What would you add for “real production hardening”?
+Training Pipeline
+     ↓
+MLflow Experiment Tracking
+     ↓
+Model Registry
+     ↓
+Docker Build
+     ↓
+Kubernetes Deployment
 
-Authentication, rate limiting, request validation, offline batch scoring, drift monitoring, and automated rollback. A Helm chart plus environment-specific overlays would standardize deployment across clusters.
+Infrastructure:
 
-Q5: What’s the biggest scaling lever here?
+Terraform → Kubernetes Cluster
+Docker → Container Runtime
+GitHub Actions → CI/CD
+Prometheus → Monitoring
+Core Features
+Production Inference API
 
-Horizontal autoscaling with HPA handles traffic spikes, while model caching and efficient model loading reduce inference latency. In a real setting, you’d also add queue-based async inference for heavy workloads.
+FastAPI-based scalable serving
 
-Q6: How would you evaluate this system end-to-end?
+Model caching for performance
 
-Unit tests validate API and config behavior, CI ensures consistent quality, smoke tests validate runtime behavior, and MLflow metrics quantify model performance. In production, you would add load tests and canary deploys.
+Typed request/response schemas
 
-Q7: Why FastAPI + MLflow?
+MLOps Integration
 
-FastAPI is lightweight and widely used for inference services. MLflow provides a standard approach to experiment tracking and model registry workflows that hiring teams recognize immediately.
+MLflow experiment tracking
+
+Model versioning
+
+Environment config management
+
+Containerization
+
+Multi-stage Docker build
+
+Production-ready image optimization
+
+Orchestration
+
+Kubernetes deployment manifests
+
+Horizontal scaling ready
+
+Observability
+
+Prometheus metrics
+
+Latency tracking
+
+Request counters
+
+Structured logging
+
+CI/CD
+
+GitHub Actions pipeline
+
+Automated testing
+
+Build validation
+
+
+
+Metrics Table
+Metric	Description	Purpose
+ml_api_requests_total	Total API requests	Traffic monitoring
+ml_prediction_latency_seconds	Inference latency	Performance tracking
+model_version	Active model version	Traceability
+experiment_id	MLflow run ID	Reproducibility
+deployment_replicas	Active pods	Scaling insight
+
+
+
+
+
+Quick Start
+Clone Repository
+git clone https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline.git
+cd ML-Docker-Orchestrator-with-full-MLops-pipeline
+Create Environment
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+ Run API
+uvicorn api.main:app --reload
+
+
+
+http://localhost:8000/docs
+ Docker Run
+docker build -t ml-orchestrator .
+docker run -p 8000:8000 ml-orchestrator
+ Kubernetes Deploy
+kubectl apply -f orchestration/kubernetes/deployment.yaml
+Metrics Table
+Metric	Description	Purpose
+ml_api_requests_total	Total API requests	Traffic monitoring
+ml_prediction_latency_seconds	Inference latency	Performance tracking
+model_version	Active model version	Traceability
+experiment_id	MLflow run ID	Reproducibility
+deployment_replicas	Active pods	Scaling insight
+Enterprise Capabilities Demonstrated
+
+Decoupled training and inference pipelines
+
+Reproducible experiment tracking
+
+Container-first deployment model
+
+Infrastructure as Code (Terraform-ready)
+
+Horizontal scalability via Kubernetes
+
+Observability-first design
+
+CI/CD-driven validation
+
+
+Q1: How does this system handle model versioning?
+
+Model artifacts are logged via MLflow and can be promoted to production through registry integration. Deployment is decoupled from training, allowing safe model upgrades.
+
+Q2: How is inference latency controlled?
+
+Model caching at startup
+
+Prometheus latency monitoring
+
+Container resource constraints
+
+Horizontal pod scaling
+
+Q3: How would you scale this for millions of requests?
+
+Add API gateway layer
+
+Implement Redis caching
+
+Use autoscaling (HPA)
+
+Add load balancing
+
+Deploy on managed Kubernetes (EKS/GKE)
+
+Q4: How is reproducibility ensured?
+
+MLflow tracking URI
+
+Logged hyperparameters
+
+Artifact versioning
+
+Environment config isolation
+
+Q5: How would you integrate GPU support?
+
+Use CUDA-enabled Docker base image
+
+Kubernetes node selector for GPU nodes
+
+Torch/TensorFlow GPU runtime
+
+Q6: How would you improve fault tolerance?
+
+Readiness and liveness probes
+
+Circuit breaker pattern
+
+Request timeouts
+
+Graceful shutdown hooks
+
+Q7: What makes this enterprise-grade?
+
+Config-driven architecture
+
+CI/CD validation
+
+Observability integration
+
+Decoupled pipelines
+
+Infrastructure modularity
+
+Production-style container builds
+
+Why This Project Matters
+
+This repository demonstrates:
+Practical MLOps understanding
+Infrastructure fluency
+Production API design
+DevOps integration
+System design thinking
+It is not a toy ML project.
+It is an infrastructure-oriented ML platform.

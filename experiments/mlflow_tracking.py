@@ -1,7 +1,7 @@
 # experiments/mlflow_tracking.py
 
 import mlflow
-from src.config import settings
+from orchestrator.config import settings
 
 
 def configure_mlflow():
