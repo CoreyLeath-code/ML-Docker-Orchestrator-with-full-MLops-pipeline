@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Layer cache optimization for dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application layer
+COPY platform_monitor.py .
+
+EXPOSE 8501
+
+ENTRYPOINT ["streamlit", "run", "platform_monitor.py", "--server.port=8501", "--server.address=0.0.0.0"]
