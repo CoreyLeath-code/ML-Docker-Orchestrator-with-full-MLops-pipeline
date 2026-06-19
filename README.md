@@ -1,15 +1,29 @@
 ML-Docker-Orchestrator with Full MLops Pipeline
 
-![Python](https://img.shields.io/badge/Python-3.10-blue)
-![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestrated-326ce5)
-![MLflow](https://img.shields.io/badge/MLflow-Experiment_Tracking-0194E2)
-![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-orange)
-![CI/CD](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-success)
-![FastAPI](https://img.shields.io/badge/FastAPI-Production_API-green)
-![Terraform](https://img.shields.io/badge/Terraform-Infrastructure-623CE4)
-![MLOps](https://img.shields.io/badge/MLOps-End_to_End-critical)
+# ⚙️ MLOps Docker Orchestrator with Full MLOps Pipeline
 
+![Build Status](https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline/workflows/CI/badge.svg)
+[![Security Scan: Trivy](https://img.shields.io/badge/Security_Scan-Trivy-brightgreen.svg)](https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions)
+[![Infrastructure: Docker Compose](https://img.shields.io/badge/Infrastructure-Docker_Compose-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Control Plane: Streamlit](https://img.shields.io/badge/Control_Plane-Streamlit-FF4B4B.svg?logo=streamlit&logoColor=white)](https://share.streamlit.io/)
+[![Platform Architecture: L6 Staff Tier](https://img.shields.io/badge/Architecture-L6_Staff_Engine-blueviolet.svg)](#-platform-architecture--distributed-topology)
+
+An enterprise-grade, highly available, and idempotent distributed MLOps orchestration platform. This platform programmatically schedules execution graphs (DAGs), tracks multi-container container life cycles, enforces strict image-layer vulnerability validation boundaries, and exposes an integrated AIOps Control Plane telemetry monitor.
+
+---
+
+## ⚡ High-Availability Key Features
+
+* **Idempotent Desired-State Enforcement:** Modeled on advanced Infrastructure-as-Code (IaC) paradigms to guarantee that container cluster definitions converge cleanly to the target state without data degradation or drift.
+* **Deterministic Execution Scheduling (DAG):** Manages processing tasks sequentially across custom-bridged networks to ensure complete network isolation and data separation.
+* **Production-Grade SecOps & Lineage:** Integrates automated multi-stage compilation caches, Software Bill of Materials (SBOM) tree generation, and automated container file vulnerability scanning via Trivy.
+* **Integrated Telemetry Control Plane:** Built with an active Streamlit monitoring grid that maps distributed component health, tracks system logs, and exposes interactive hook engines to test fault-tolerant chaos engineering scenarios.
+
+---
+
+## 🗺️ Platform Architecture & Distributed Topology
+
+The system operates inside an isolated Docker bridge network environment, decoupling high-throughput orchestration processing layers from active UI data visualizers.
 
 
 Architecture Flow
@@ -18,111 +32,45 @@ Architecture Flow
 
 
 
-README
-ML Docker Orchestrator – Production ML Inference Platform
+🗺️ Platform Architecture & Distributed Topology
 
-A production-style ML inference orchestration system demonstrating full end-to-end MLOps:
+The system operates inside an isolated Docker bridge network environment, decoupling high-throughput orchestration processing layers from active UI data visualizers.
 
-Model training & experiment tracking
+   [ Client / Engineering Operator ]
+                   │
+                   ▼ (Maps Ingress Port 8501)
+ ┌────────────────────────────────────┐
+ │ mlops_control_plane (Streamlit UI) │ ◄── Telemetry Control Engine
+ └─────────────────┬──────────────────┘
+                   │
+ ⚙️  [ mlops-network ] (Isolated Internal Docker Bridge)
+                   │
+┌──────────────────┼──────────────────┐
+│                  │                  │
+┌──▼──┐            ┌──▼──┐            ┌──▼──┐
+│Job 1│            │Job 2│            │Job 3│ ◄── MLOps Worker Core Nodes
+└─────┘            └─────┘            └─────┘
 
-Containerized inference
 
-CI/CD automation
+### Execution Lifecycles (State Machine Transition Graph)
+1. **Data Ingestion Node:** Triggers disk serialization and local cache validation profiles.
+2. **Feature Validation Node:** Run statistical drift checking routines ($O(1)$ lookup verification).
+3. **Model Training Node:** Pulls deterministic parameter matrices into local runtime environments.
+4. **Image Compilation Node:** Compiles hardened output components inside isolated Docker environments.
+5. **Registry Promotion Node:** Runs automated vulnerability signature checking and promotes to release boundaries.
 
-Kubernetes deployment
+---
 
-Infrastructure as Code
+## ⚙️ Project Structure & Component Matrix
 
-Observability & monitoring
-
-Scalable API serving
-
-This project demonstrates how ML systems operate in real enterprise environments.
-
- System Architecture
-User Request
-     ↓
-FastAPI Inference Layer
-     ↓
-Input Validation (Pydantic)
-     ↓
-Inference Pipeline
-     ↓
-Model Loader (Cached)
-     ↓
-Prediction Engine
-     ↓
-Metrics (Prometheus)
-     ↓
-Structured Logging
-     ↓
-Response
-
-Parallel Systems:
-
-Training Pipeline
-     ↓
-MLflow Experiment Tracking
-     ↓
-Model Registry
-     ↓
-Docker Build
-     ↓
-Kubernetes Deployment
-
-Infrastructure:
-
-Terraform → Kubernetes Cluster
-Docker → Container Runtime
-GitHub Actions → CI/CD
-Prometheus → Monitoring
-Core Features
-Production Inference API
-
-FastAPI-based scalable serving
-
-Model caching for performance
-
-Typed request/response schemas
-
-MLOps Integration
-
-MLflow experiment tracking
-
-Model versioning
-
-Environment config management
-
-Containerization
-
-Multi-stage Docker build
-
-Production-ready image optimization
-
-Orchestration
-
-Kubernetes deployment manifests
-
-Horizontal scaling ready
-
-Observability
-
-Prometheus metrics
-
-Latency tracking
-
-Request counters
-
-Structured logging
-
-CI/CD
-
-GitHub Actions pipeline
-
-Automated testing
-
-Build validation
-
+```text
+├── .github/workflows/
+│   └── ci.yml               # Automated multi-stage builds, Trivy CVE scanning, & SBOM audits
+├── Dockerfile.monitor       # Multi-stage, layer-optimized runtime definition for the Control Plane
+├── docker-compose.yml       # Primary multi-container cluster topology specification
+├── platform_monitor.py      # Streamlit AIOps telemetry control engine and chaos simulation script
+├── requirements.txt         # Enforced base platform dependencies pinned to stable builds
+└── README.md                # L6 System Documentation
 
 
 Metrics Table
