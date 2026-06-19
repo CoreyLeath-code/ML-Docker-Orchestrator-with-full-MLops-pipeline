@@ -2,7 +2,7 @@ ML-Docker-Orchestrator with Full MLops Pipeline
 
 # ⚙️ MLOps Docker Orchestrator with Full MLOps Pipeline
 
-![Build Status](https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline/workflows/CI/badge.svg)
+![Build Status](https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/ci.yml/badge.svg)
 [![Security Scan: Trivy](https://img.shields.io/badge/Security_Scan-Trivy-brightgreen.svg)](https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions)
 [![Infrastructure: Docker Compose](https://img.shields.io/badge/Infrastructure-Docker_Compose-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Control Plane: Streamlit](https://img.shields.io/badge/Control_Plane-Streamlit-FF4B4B.svg?logo=streamlit&logoColor=white)](https://share.streamlit.io/)
