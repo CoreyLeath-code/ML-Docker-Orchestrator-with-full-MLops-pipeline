@@ -1,29 +1,19 @@
 name: CI
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+on: [push, pull_request]
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code Stack
-        uses: actions/checkout@v4
-
-      - name: Set up Python Runtime
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install Platform Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          # Explicitly ensuring monitor tools exist in test layer
-          pip install streamlit pandas numpy matplotlib
-
-      # ... keep your existing test execution scripts, trivy scan steps, and linting here ...
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-node@v4
+        with: { python-version: '3.11' }
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run Linting (Ruff)
+        run: ruff check . && ruff format --check .
+      - name: Run Strict Typing (Mypy)
+        run: mypy src/
+      - name: Run Test Suite
+        run: pytest --cov=src/ --cov-fail-under=80 tests/
