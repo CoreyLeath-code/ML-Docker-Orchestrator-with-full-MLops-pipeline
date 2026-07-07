@@ -74,19 +74,17 @@ st.markdown("---")
 # --- PIPELINE DIRECTED ACYCLIC GRAPH (DAG) VISUALIZER ---
 st.subheader("📊 MLOps Pipeline Orchestration Graph (DAG State Machine)")
 
-# Logic to smoothly transition steps sequentially if triggered
 stages = ["Idle", "Data Ingestion", "Feature Validation", "Model Training", "Image Compilation", "Registry Promotion"]
 if st.session_state.pipeline_stage != "Idle":
     current_idx = stages.index(st.session_state.pipeline_stage)
     if current_idx < len(stages) - 1:
-        time.sleep(0.6)  # Simulate running state execution boundaries
+        time.sleep(0.6)
         st.session_state.pipeline_stage = stages[current_idx + 1]
         log_event("INFO", "SCHEDULER", f"Transitioned task node state to: {st.session_state.pipeline_stage}")
     else:
         st.session_state.pipeline_stage = "Idle"
         log_event("SUCCESS", "SCHEDULER", "Pipeline execution cycle completed. State machine reclaimed resources.")
 
-# Render horizontal visual pipeline blocks
 cols = st.columns(len(stages) - 1)
 for i, stage in enumerate(stages[1:]):
     with cols[i]:
@@ -101,7 +99,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.subheader("🖥️ Distributed Container Runtime Matrix")
 node_data = []
 for name, metrics in st.session_state.node_cluster.items():
-    # Jitter live hardware readings for simulation authenticity
     if metrics["status"] == "HEALTHY":
         metrics["cpu"] = max(2.0, min(98.0, metrics["cpu"] + random.uniform(-1.5, 1.5)))
         metrics["memory"] = max(5.0, min(95.0, metrics["memory"] + random.uniform(-0.5, 0.5)))
@@ -117,8 +114,10 @@ for name, metrics in st.session_state.node_cluster.items():
 df_nodes = pd.DataFrame(node_data)
 
 def style_cluster_nodes(val):
-    if val == "HEALTHY": return "background-color: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: bold;"
-    if val == "CRASH_LOOP_BACKOFF": return "background-color: rgba(239, 68, 68, 0.2); color: #ef4444; font-weight: bold;"
+    if val == "HEALTHY":
+        return "background-color: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: bold;"
+    if val == "CRASH_LOOP_BACKOFF":
+        return "background-color: rgba(239, 68, 68, 0.2); color: #ef4444; font-weight: bold;"
     return ""
 
 st.dataframe(
@@ -138,6 +137,5 @@ if st.session_state.orchestration_logs:
 else:
     st.info("System logging daemon silent. Telemetry loops reporting clear buffer matrices.")
 
-# Automatically trigger page reruns for continuous performance monitoring update loops
 time.sleep(1.0)
 st.rerun()
