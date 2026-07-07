@@ -23,17 +23,17 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pytest pytest-cov mypy
           
-      # This step now fixes formatting issues automatically
+      # Keep --fix here as 'ruff check' supports it
       - name: Run Linting (Ruff)
         uses: astral-sh/ruff-action@v1
         with:
-          args: "check . --fix" 
+          args: "check . --fix"
           
-      # This step now applies the format fixes during the run
-      - name: Run Formatting (Ruff)
+      # Removed --fix from 'format' as it is not a valid argument for formatting
+      - name: Run Formatting Check (Ruff)
         uses: astral-sh/ruff-action@v1
         with:
-          args: "format . --fix"
+          args: "format ."
         
       - name: Run Strict Typing (Mypy)
         run: mypy .
