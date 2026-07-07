@@ -13,25 +13,27 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: astral-sh/setup-uv@v3
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           
       - name: Install dependencies
         run: |
-          pip install pytest pytest-cov mypy
+          python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest pytest-cov mypy
           
-      # The --fix flag will automatically resolve E701 errors
+      # This step now fixes formatting issues automatically
       - name: Run Linting (Ruff)
         uses: astral-sh/ruff-action@v1
         with:
           args: "check . --fix" 
           
-      - name: Run Formatting Check (Ruff)
+      # This step now applies the format fixes during the run
+      - name: Run Formatting (Ruff)
         uses: astral-sh/ruff-action@v1
         with:
-          args: "format --check ."
+          args: "format . --fix"
         
       - name: Run Strict Typing (Mypy)
         run: mypy .
