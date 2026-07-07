@@ -1,15 +1,21 @@
-name: Release Notes
-
+name: Release
 on:
   push:
-    tags:
-      - "v*.*.*"
-
+    branches:
+      - main
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          generate_release_notes: true
+          node-version: '20'
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          semantic_version: 18
+          branches: |
+            ['main']
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
