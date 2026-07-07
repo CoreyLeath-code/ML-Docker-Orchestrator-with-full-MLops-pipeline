@@ -1,0 +1,12 @@
+{
+  "name": "ml-docker-orchestrator",
+  "version": "1.0.0",
+  "description": "Enterprise MLOps Orchestration Pipeline",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline.git"
+  },
+  "release": {
+    "branches": ["main"]
+  }
+}
