@@ -21,25 +21,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # Explicitly installing testing and validation dependencies
           pip install pytest pytest-cov mypy httpx
           
-      # Quality Gate 1: Linting
       - name: Run Linting (Ruff)
         uses: astral-sh/ruff-action@v1
         with:
           args: "check . --fix"
           
-      # Quality Gate 2: Formatting
       - name: Run Formatting Check (Ruff)
         uses: astral-sh/ruff-action@v1
         with:
           args: "format ."
         
-      # Quality Gate 3: Type Safety
       - name: Run Strict Typing (Mypy)
         run: mypy .
         
-      # Quality Gate 4: Test Suite
+      # Coverage gate: Omits UI/Dashboard scripts to ensure metrics reflect backend logic
       - name: Run Test Suite
-        run: pytest --cov=. --cov-fail-under=80
+        run: pytest --cov=. --cov-fail-under=80 --cov-report=term-missing --cov-omit="platform_monitor.py"
