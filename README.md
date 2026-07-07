@@ -1,11 +1,11 @@
 ML-Docker-Orchestrator with Full MLops Pipeline
 
 # ⚙️ MLOps Docker Orchestrator with Full MLOps Pipeline
-
-![Build Status](https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/ci.yml/badge.svg)
-[![Security Scan: Trivy](https://img.shields.io/badge/Security_Scan-Trivy-brightgreen.svg)](https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions)
-[![Infrastructure: Docker Compose](https://img.shields.io/badge/Infrastructure-Docker_Compose-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Control Plane: Streamlit](https://img.shields.io/badge/Control_Plane-Streamlit-FF4B4B.svg?logo=streamlit&logoColor=white)](https://share.streamlit.io/)
+![CI/CD Pipeline](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/ci.yml/badge.svg)
+![Security Audit](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/security.yml/badge.svg)
+![Python Version](https://img.shields.io/badge/python-3.11-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Code Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)
 
 
 An enterprise-grade, highly available, and idempotent distributed MLOps orchestration platform. This platform programmatically schedules execution graphs (DAGs), tracks multi-container container life cycles, enforces strict image-layer vulnerability validation boundaries, and exposes an integrated AIOps Control Plane telemetry monitor.
