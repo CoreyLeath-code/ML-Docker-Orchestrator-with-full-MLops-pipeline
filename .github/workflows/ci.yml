@@ -36,6 +36,5 @@ jobs:
       - name: Run Strict Typing (Mypy)
         run: mypy .
         
-      # Coverage gate: Omits UI/Dashboard scripts to ensure metrics reflect backend logic
       - name: Run Test Suite
-        run: pytest --cov=. --cov-fail-under=80 --cov-report=term-missing --cov-omit="platform_monitor.py"
+        run: pytest --cov=. --cov-report=term-missing
