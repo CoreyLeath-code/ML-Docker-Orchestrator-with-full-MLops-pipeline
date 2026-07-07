@@ -23,6 +23,14 @@ An enterprise-grade, highly available, and idempotent distributed MLOps orchestr
 
 ## 🗺️ Platform Architecture & Distributed Topology
 
+graph LR
+    A[Idle] --> B[Data Ingestion]
+    B --> C[Feature Validation]
+    C --> D[Model Training]
+    D --> E[Image Compilation]
+    E --> F[Registry Promotion]
+    F --> A
+    
 The system operates inside an isolated Docker bridge network environment, decoupling high-throughput orchestration processing layers from active UI data visualizers.
 
 
