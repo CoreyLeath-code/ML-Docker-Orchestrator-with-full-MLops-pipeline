@@ -1,23 +1,25 @@
-# terraform/main.tf
-
 provider "aws" {
   region = "us-east-1"
 }
 
 resource "aws_instance" "ml_api_server" {
-  ami           = "ami-0c02fb55956c7d316" # Amazon Linux 2 (check for latest)
-  instance_type = "t2.micro"
+  ami                         = "ami-0c02fb55956c7d316"
+  instance_type               = "t3.micro"
+  monitoring                  = true
+  associate_public_ip_address = false
 
-  tags = {
-    Name = "ML-Docker-Orchestrator-Server"
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
   }
 
-  user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              amazon-linux-extras install docker -y
-              service docker start
-              usermod -a -G docker ec2-user
-              docker run -d -p 8000:8000 ml-docker-api
-              EOF
+  root_block_device {
+    encrypted   = true
+    volume_type = "gp3"
+  }
+
+  tags = {
+    Name        = "ML-Docker-Orchestrator-Server"
+    Environment = "production"
+  }
 }
