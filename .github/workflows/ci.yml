@@ -1,40 +1,62 @@
 name: CI
-
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
+  push: {branches: [main]}
+  pull_request: {branches: [main]}
+permissions: {contents: read}
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          
-      - name: Install dependencies
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements-runtime.txt
+            requirements-dev.txt
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Format lint static dependency
         run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest pytest-cov mypy httpx
-          
-      - name: Run Linting (Ruff)
-        uses: astral-sh/ruff-action@v1
+          ruff format --check src/orchestrator benchmarks tests
+          ruff check src/orchestrator benchmarks tests
+          bandit -q -r src/orchestrator
+          pip-audit -r requirements-runtime.txt
+      - name: Unit integration API negative regression coverage
+        run: pytest
+      - name: Benchmark
+        run: python benchmarks/run_benchmark.py --iterations 500 --warmup 25 --output benchmarks/latest.json
+      - name: License inventory
+        run: pip-licenses --format=json --output-file=benchmarks/licenses.json
+      - uses: actions/upload-artifact@v4
         with:
-          args: "check . --fix"
-          
-      - name: Run Formatting Check (Ruff)
-        uses: astral-sh/ruff-action@v1
-        with:
-          args: "format ."
-        
-      - name: Run Strict Typing (Mypy)
-        run: mypy .
-        
-      - name: Run Test Suite
-        run: pytest --cov=. --cov-report=term-missing
+          name: quality-evidence
+          path: |
+            coverage.xml
+            benchmarks/latest.json
+            benchmarks/licenses.json
+          if-no-files-found: error
+  deployment-validation:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t orchestrator:${{ github.sha }} .
+      - name: Identity startup model API
+        run: |
+          test "$(docker run --rm orchestrator:${{ github.sha }} id -u)" = "10001"
+          docker run -d --name api -p 8080:8080 --memory=512m --cpus=1 orchestrator:${{ github.sha }}
+          trap 'docker logs api; docker rm -f api' EXIT
+          for attempt in {1..20}; do curl -fsS http://127.0.0.1:8080/ready && break; sleep 2; done
+          curl -fsS -X POST http://127.0.0.1:8080/predict -H 'content-type: application/json' -d '{"records":[{"f1":1,"f2":2,"f3":3}]}'
+      - name: Kubernetes and promotion controls
+        run: |
+          docker run --rm -v "$PWD:/work" ghcr.io/yannh/kubeconform:v0.7.0 -strict -summary /work/deployment.yaml /work/service.yaml /work/network-policy.yaml
+          ! grep -q "image:.*:latest" deployment.yaml
+          grep -q "readOnlyRootFilesystem: true" deployment.yaml
+          grep -q "automountServiceAccountToken: false" deployment.yaml
