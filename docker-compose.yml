@@ -1,25 +1,16 @@
-version: '3.8'
-
 services:
-  # ... Keep your existing pipeline / orchestrator services here ...
-
-  # ⚙️ Staff-Architect Control Plane & Telemetry Monitor
-  mlops-monitor:
-    container_name: mlops_control_plane
-    build:
-      context: .
-      dockerfile: Dockerfile.monitor
+  orchestrator:
+    build: .
+    image: ml-docker-orchestrator:local
     ports:
-      - "8501:8501"
+      - "127.0.0.1:8080:8080"
     environment:
-      - PYTHONUNBUFFERED=1
-      - ENV=production
-    volumes:
-      - .:/app:ro  # Mounts source directory as read-only for hot-reloading if needed
-    networks:
-      - mlops-network
+      APP_ENV: production
+      MODEL_BACKEND: deterministic
+      MAX_BATCH_SIZE: "1000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
-
-networks:
-  mlops-network:
-    driver: bridge
