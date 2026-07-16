@@ -1,216 +1,106 @@
-ML-Docker-Orchestrator with Full MLops Pipeline
+# ML Docker Orchestrator
+
+[![CI](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/ci.yml)
+[![Security](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/security.yml/badge.svg)](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/security.yml)
+![Coverage](https://img.shields.io/badge/core%20coverage-%E2%89%A590%25-success)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/container-non--root%20%7C%20read--only-2496ED?logo=docker&logoColor=white)
+![SBOM](https://img.shields.io/badge/SBOM-SPDX-blue)
+![Deployment](https://img.shields.io/badge/deployment%20gates-9%20tiers-success)
+[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+
+A reproducible FastAPI inference service with an optional MLflow registry backend, Prometheus
+telemetry, hardened containers, and evidence-producing CI/CD. The default reference backend mirrors
+the seeded synthetic training function, so development, testing, benchmarks, readiness, and rollback
+work without external infrastructure.
+
+## Metrics dashboard
+
+| Metric | Source of truth | Acceptance |
+|---|---|---:|
+| Core branch coverage | CI `coverage.xml` | >=90% |
+| CI/security state | live workflow badges | all required jobs pass |
+| Latency avg/median/p95/p99/min/max | `benchmarks/latest.json` | measured, hardware-sensitive |
+| Throughput/success/peak memory | benchmark artifact | success = 100% |
+| Synthetic RMSE/MAE/R2 | seeded benchmark | R2 > 0.95 regression test |
+| Dependencies/licenses | `licenses.json` | inventory produced |
+| Security findings | CodeQL, Bandit, pip-audit, Trivy | 0 blocking |
+| Image/startup/API/model load | deployment-validation | all pass |
+| SBOM | security evidence | SPDX JSON produced |
+| Repository size/LOC/issues/releases | live GitHub metadata | not hard-coded |
+| GPU/MAP/MRR/NDCG | not applicable/currently unavailable | never fabricated |
+
+Numerical performance values stay attached to their commit and runner instead of becoming stale
+README claims.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  C[Client] --> G[Gateway TLS identity rate limits]
+  G --> A[FastAPI orchestrator]
+  A --> V[Finite schema and batch validation]
+  V --> D[Deterministic reference backend]
+  V --> R[Optional MLflow alias backend]
+  A --> P[Prometheus metrics and structured logs]
+  T[Seeded training] --> M[MLflow tracking]
+  M --> R
+  A --> K[Docker and Kubernetes]
+```
+
+## Run and reproduce
+
+```bash
+python -m venv .venv
+# activate the environment
+python -m pip install -r requirements-dev.txt
+pytest
+python benchmarks/run_benchmark.py
+uvicorn orchestrator.api:app --app-dir src --host 127.0.0.1 --port 8080
+```
+
+```bash
+curl http://127.0.0.1:8080/ready
+curl -X POST http://127.0.0.1:8080/predict \
+  -H "content-type: application/json" \
+  -d '{"records":[{"f1":1,"f2":2,"f3":3}]}'
+```
+
+Records require exactly finite numeric `f1`, `f2`, and `f3`; batches are bounded. Registry
+failures return a sanitized 503. Set `MODEL_BACKEND=registry` only when MLflow, pandas, credentials,
+network policy, and a promoted model alias are provisioned.
+
+## Benchmark protocol
+
+The benchmark warms the in-process API, measures the complete latency distribution, throughput,
+success rate, peak Python allocation, and environment provenance, then regenerates seeded synthetic
+RMSE, MAE, and R2. It is not a network capacity promise. Use k6 or Locust against staging for
+1/10/100/1,000/10,000-user scenarios.
+
+## Deployment
+
+```bash
+docker compose up --build
+kubectl apply -f network-policy.yaml -f deployment.yaml -f service.yaml
+```
+
+The runtime uses UID 10001, read-only filesystems, dropped capabilities, RuntimeDefault seccomp,
+resource bounds, disabled service-account tokens, immutable image tags, three probe types, and
+default-deny networking. Nine gates cover formatting, lint, static analysis, tests, integration,
+coverage, security, benchmark evidence, and production validation.
+
+## Documentation
+
+- [Audit](docs/AUDIT.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Benchmark report](benchmarks/benchmark_report.md)
+- [Performance](docs/PERFORMANCE.md)
+- [Deployment and rollback](docs/DEPLOYMENT.md)
+- [Production checklist](docs/PRODUCTION_CHECKLIST.md)
+- [Security](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 
-# ⚙️ MLOps Docker Orchestrator with Full MLOps Pipeline
-![CI/CD Pipeline](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/ci.yml/badge.svg)
-![Security Audit](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/security.yml/badge.svg)
-![Python Version](https://img.shields.io/badge/python-3.11-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Code Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)
+## License
 
-
-An enterprise-grade, highly available, and idempotent distributed MLOps orchestration platform. This platform programmatically schedules execution graphs (DAGs), tracks multi-container container life cycles, enforces strict image-layer vulnerability validation boundaries, and exposes an integrated AIOps Control Plane telemetry monitor.
-
----
-
-## ⚡ High-Availability Key Features
-
-* **Idempotent Desired-State Enforcement:** Modeled on advanced Infrastructure-as-Code (IaC) paradigms to guarantee that container cluster definitions converge cleanly to the target state without data degradation or drift.
-* **Deterministic Execution Scheduling (DAG):** Manages processing tasks sequentially across custom-bridged networks to ensure complete network isolation and data separation.
-* **Production-Grade SecOps & Lineage:** Integrates automated multi-stage compilation caches, Software Bill of Materials (SBOM) tree generation, and automated container file vulnerability scanning via Trivy.
-* **Integrated Telemetry Control Plane:** Built with an active Streamlit monitoring grid that maps distributed component health, tracks system logs, and exposes interactive hook engines to test fault-tolerant chaos engineering scenarios.
-
----
-
-## 🗺️ Platform Architecture & Distributed Topology
-
-graph LR
-    A[Idle] --> B[Data Ingestion]
-    B --> C[Feature Validation]
-    C --> D[Model Training]
-    D --> E[Image Compilation]
-    E --> F[Registry Promotion]
-    F --> A
-    
-The system operates inside an isolated Docker bridge network environment, decoupling high-throughput orchestration processing layers from active UI data visualizers.
-
-
-Architecture Flow
-
-![image](https://github.com/user-attachments/assets/d9044d80-a9d7-42f7-8957-19bd2e9e9e77)
-
-
-
-🗺️ Platform Architecture & Distributed Topology
-
-The system operates inside an isolated Docker bridge network environment, decoupling high-throughput orchestration processing layers from active UI data visualizers.
-
-   [ Client / Engineering Operator ]
-                   │
-                   ▼ (Maps Ingress Port 8501)
- ┌────────────────────────────────────┐
- │ mlops_control_plane (Streamlit UI) │ ◄── Telemetry Control Engine
- └─────────────────┬──────────────────┘
-                   │
- ⚙️  [ mlops-network ] (Isolated Internal Docker Bridge)
-                   │
-┌──────────────────┼──────────────────┐
-│                  │                  │
-┌──▼──┐            ┌──▼──┐            ┌──▼──┐
-│Job 1│            │Job 2│            │Job 3│ ◄── MLOps Worker Core Nodes
-└─────┘            └─────┘            └─────┘
-
-
-### Execution Lifecycles (State Machine Transition Graph)
-1. **Data Ingestion Node:** Triggers disk serialization and local cache validation profiles.
-2. **Feature Validation Node:** Run statistical drift checking routines ($O(1)$ lookup verification).
-3. **Model Training Node:** Pulls deterministic parameter matrices into local runtime environments.
-4. **Image Compilation Node:** Compiles hardened output components inside isolated Docker environments.
-5. **Registry Promotion Node:** Runs automated vulnerability signature checking and promotes to release boundaries.
-
----
-
-## ⚙️ Project Structure & Component Matrix
-
-```text
-├── .github/workflows/
-│   └── ci.yml               # Automated multi-stage builds, Trivy CVE scanning, & SBOM audits
-├── Dockerfile.monitor       # Multi-stage, layer-optimized runtime definition for the Control Plane
-├── docker-compose.yml       # Primary multi-container cluster topology specification
-├── platform_monitor.py      # Streamlit AIOps telemetry control engine and chaos simulation script
-├── requirements.txt         # Enforced base platform dependencies pinned to stable builds
-└── README.md                # L6 System Documentation
-
-
-Metrics Table
-Metric	Description	Purpose
-ml_api_requests_total	Total API requests	Traffic monitoring
-ml_prediction_latency_seconds	Inference latency	Performance tracking
-model_version	Active model version	Traceability
-experiment_id	MLflow run ID	Reproducibility
-deployment_replicas	Active pods	Scaling insight
-
-
-
-
-
-Quick Start
-Clone Repository
-git clone https://github.com/Trojan3877/ML-Docker-Orchestrator-with-full-MLops-pipeline.git
-cd ML-Docker-Orchestrator-with-full-MLops-pipeline
-Create Environment
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
- Run API
-uvicorn api.main:app --reload
-
-
-
-http://localhost:8000/docs
- Docker Run
-docker build -t ml-orchestrator .
-docker run -p 8000:8000 ml-orchestrator
- Kubernetes Deploy
-kubectl apply -f orchestration/kubernetes/deployment.yaml
-Metrics Table
-Metric	Description	Purpose
-ml_api_requests_total	Total API requests	Traffic monitoring
-ml_prediction_latency_seconds	Inference latency	Performance tracking
-model_version	Active model version	Traceability
-experiment_id	MLflow run ID	Reproducibility
-deployment_replicas	Active pods	Scaling insight
-Enterprise Capabilities Demonstrated
-
-Decoupled training and inference pipelines
-
-Reproducible experiment tracking
-
-Container-first deployment model
-
-Infrastructure as Code (Terraform-ready)
-
-Horizontal scalability via Kubernetes
-
-Observability-first design
-
-CI/CD-driven validation
-
-
-Q1: How does this system handle model versioning?
-
-Model artifacts are logged via MLflow and can be promoted to production through registry integration. Deployment is decoupled from training, allowing safe model upgrades.
-
-Q2: How is inference latency controlled?
-
-Model caching at startup
-
-Prometheus latency monitoring
-
-Container resource constraints
-
-Horizontal pod scaling
-
-Q3: How would you scale this for millions of requests?
-
-Add API gateway layer
-
-Implement Redis caching
-
-Use autoscaling (HPA)
-
-Add load balancing
-
-Deploy on managed Kubernetes (EKS/GKE)
-
-Q4: How is reproducibility ensured?
-
-MLflow tracking URI
-
-Logged hyperparameters
-
-Artifact versioning
-
-Environment config isolation
-
-Q5: How would you integrate GPU support?
-
-Use CUDA-enabled Docker base image
-
-Kubernetes node selector for GPU nodes
-
-Torch/TensorFlow GPU runtime
-
-Q6: How would you improve fault tolerance?
-
-Readiness and liveness probes
-
-Circuit breaker pattern
-
-Request timeouts
-
-Graceful shutdown hooks
-
-Q7: What makes this enterprise-grade?
-
-Config-driven architecture
-
-CI/CD validation
-
-Observability integration
-
-Decoupled pipelines
-
-Infrastructure modularity
-
-Production-style container builds
-
-Why This Project Matters
-https://ml-docker-orchestrator-with-full-mlops-pipeline-e75dgnyebvnqxp.streamlit.app/ LIVE DEMO LINK
-This repository demonstrates:
-Practical MLOps understanding
-Infrastructure fluency
-Production API design
-DevOps integration
-System design thinking
-It is not a toy ML project.
-It is an infrastructure-oriented ML platform.
+MIT. See [LICENSE](LICENSE).
