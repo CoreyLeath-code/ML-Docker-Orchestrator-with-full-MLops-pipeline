@@ -24,12 +24,12 @@ jobs:
           pip install pytest pytest-cov mypy httpx
           
       - name: Run Linting (Ruff)
-        uses: astral-sh/ruff-action@v1
+        uses: astral-sh/ruff-action@v3
         with:
           args: "check . --fix"
           
       - name: Run Formatting Check (Ruff)
-        uses: astral-sh/ruff-action@v1
+        uses: astral-sh/ruff-action@v3
         with:
           args: "format ."
         
