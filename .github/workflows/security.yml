@@ -1,25 +1,47 @@
-name: Security
-on: [push, pull_request]
-
+name: Security and Supply Chain
+on:
+  push: {branches: [main]}
+  pull_request: {branches: [main]}
+  schedule:
+    - cron: "23 5 * * 1"
 permissions:
   contents: read
   security-events: write
-
 jobs:
-  security:
+  codeql:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Trivy: Container & Dependency Scanning
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - uses: github/codeql-action/init@v3
+        with: {languages: python}
+      - uses: github/codeql-action/analyze@v3
+  supply-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
-          scan-type: 'fs'
-          severity: 'CRITICAL,HIGH'
-      # CodeQL: Deep static analysis of source code
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+      - run: docker build -t orchestrator:scan .
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
-          languages: python
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+          image-ref: orchestrator:scan
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+      - run: mkdir -p artifacts
+      - uses: anchore/sbom-action@v0
+        with:
+          image: orchestrator:scan
+          format: spdx-json
+          output-file: artifacts/sbom.spdx.json
+          upload-artifact: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: security-evidence
+          path: artifacts/sbom.spdx.json
