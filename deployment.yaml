@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-docker-orchestrator
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app: ml-docker-orchestrator}
+  template:
+    metadata:
+      labels: {app: ml-docker-orchestrator}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: ghcr.io/coreyleath-code/ml-docker-orchestrator-with-full-mlops-pipeline:1.0.0
+          ports:
+            - {name: http, containerPort: 8080}
+          env:
+            - {name: APP_ENV, value: production}
+            - {name: MODEL_BACKEND, value: deterministic}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          startupProbe:
+            httpGet: {path: /live, port: http}
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet: {path: /live, port: http}
+          readinessProbe:
+            httpGet: {path: /ready, port: http}
