@@ -37,4 +37,4 @@ jobs:
         run: mypy .
         
       - name: Run Test Suite
-        run: pytest --cov=. --cov-report=term-missing
+        run: pytest --cov=src --cov-report=term-missing
