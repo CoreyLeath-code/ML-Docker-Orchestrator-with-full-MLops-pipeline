@@ -2,7 +2,7 @@ import logging
 import time
 from typing import Any
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, status
 from pydantic import BaseModel, Field
 
 from .config import settings
@@ -17,7 +17,9 @@ app = FastAPI(title="ML Docker Orchestrator", version="0.1.0")
 
 
 class PredictRequest(BaseModel):
-    records: list[dict[str, Any]] = Field(..., description="List of feature dicts")
+    records: list[dict[str, Any]] = Field(
+        ..., min_length=1, max_length=1_000, description="List of feature dicts"
+    )
 
 
 @app.get("/health")
@@ -40,10 +42,10 @@ def predict_endpoint(payload: PredictRequest, response: Response):
         out = predict(payload.records)
         response.status_code = 200
         return {"predictions": out}
-    except Exception as e:
+    except Exception:
         log.exception("prediction_failed")
-        response.status_code = 500
-        return {"error": str(e)}
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"detail": "Prediction service unavailable"}
     finally:
         dur = time.time() - start
         path = "/predict"
