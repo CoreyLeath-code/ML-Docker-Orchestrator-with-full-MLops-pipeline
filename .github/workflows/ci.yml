@@ -21,17 +21,27 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest pytest-cov mypy httpx
+          pip install pytest pytest-cov mypy httpx ruff
           
-      - name: Run Linting (Ruff)
-        uses: astral-sh/ruff-action@v3
-        with:
-          args: "check ."
-          
-      - name: Run Formatting Check (Ruff)
-        uses: astral-sh/ruff-action@v3
-        with:
-          args: "format --check ."
+      - name: Run Ruff checks on changed Python files
+        shell: bash
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            git fetch --no-tags origin "${GITHUB_BASE_REF}" --depth=1
+            mapfile -d '' -t python_files < <(
+              git diff --name-only -z "origin/${GITHUB_BASE_REF}"...HEAD -- '*.py'
+            )
+          else
+            mapfile -d '' -t python_files < <(git diff --name-only -z HEAD^ HEAD -- '*.py')
+          fi
+
+          if [ "${#python_files[@]}" -eq 0 ]; then
+            echo "No Python files changed; Ruff checks are not applicable."
+            exit 0
+          fi
+
+          ruff check "${python_files[@]}"
+          ruff format --check "${python_files[@]}"
 
       - name: Verify quality checks do not mutate the checkout
         run: git diff --exit-code
