@@ -26,12 +26,15 @@ jobs:
       - name: Run Linting (Ruff)
         uses: astral-sh/ruff-action@v3
         with:
-          args: "check . --fix"
+          args: "check ."
           
       - name: Run Formatting Check (Ruff)
         uses: astral-sh/ruff-action@v3
         with:
-          args: "format ."
+          args: "format --check ."
+
+      - name: Verify quality checks do not mutate the checkout
+        run: git diff --exit-code
         
       - name: Run Strict Typing (Mypy)
         run: mypy .
