@@ -1,28 +1,186 @@
-name: Release
+name: Release and Package
+
 on:
   push:
     branches:
       - main
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Semantic version tag to publish; leave blank to use pyproject.toml version"
+        required: false
+        type: string
 
-# ADD THIS PERMISSIONS BLOCK:
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
+  packages: write
+
+concurrency:
+  group: ml-docker-orchestrator-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  prepare-release:
+    name: Prepare immutable release
+    if: >-
+      github.ref_type == 'tag' ||
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, '[publish-release]')
     runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release.outputs.release_tag }}
+      release_sha: ${{ steps.release.outputs.release_sha }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - name: Checkout source
+        uses: actions/checkout@v7
         with:
-          node-version: '20'
-      - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v6
-        with:
-          semantic_version: 18
-          branches: |
-            ['main']
+          ref: ${{ github.ref_type == 'tag' && github.ref_name || 'main' }}
+          fetch-depth: 0
+
+      - name: Resolve and create release tag when needed
+        id: release
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            release_tag="${GITHUB_REF_NAME}"
+          elif [[ -n "${INPUT_RELEASE_TAG:-}" ]]; then
+            release_tag="${INPUT_RELEASE_TAG}"
+          else
+            version="$(python - <<'PY'
+          import tomllib
+          from pathlib import Path
+
+          data = tomllib.loads(Path('pyproject.toml').read_text(encoding='utf-8'))
+          print(data['project']['version'])
+          PY
+          )"
+            release_tag="v${version}"
+          fi
+
+          if [[ ! "${release_tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must match vMAJOR.MINOR.PATCH; got ${release_tag}" >&2
+            exit 1
+          fi
+
+          git fetch --tags --force
+
+          if git rev-parse --verify "refs/tags/${release_tag}^{commit}" >/dev/null 2>&1; then
+            echo "Using existing tag ${release_tag}."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "${release_tag}" -m "Release ${release_tag}" HEAD
+            git push origin "refs/tags/${release_tag}"
+            echo "Created ${release_tag}."
+          fi
+
+          release_sha="$(git rev-parse "refs/tags/${release_tag}^{commit}")"
+          echo "release_tag=${release_tag}" >> "${GITHUB_OUTPUT}"
+          echo "release_sha=${release_sha}" >> "${GITHUB_OUTPUT}"
+          echo "Release target: ${release_tag} @ ${release_sha}"
+
+  github-release:
+    name: Publish GitHub Release
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
+    steps:
+      - name: Checkout immutable release commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare-release.outputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Build source archive and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          archive="dist/ml-docker-orchestrator-${RELEASE_TAG}.tar.gz"
+          tar --exclude=.git --exclude=dist -czf "${archive}" .
+          sha256sum "${archive}" > "${archive}.sha256"
+
+      - name: Create or update GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists; refreshing assets."
+          else
+            gh release create "${RELEASE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "${RELEASE_TAG}" \
+              --generate-notes \
+              --verify-tag
+          fi
+
+          gh release upload "${RELEASE_TAG}" \
+            dist/*.tar.gz \
+            dist/*.sha256 \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber
+
+  ghcr-package:
+    name: Publish GHCR Package
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
+    steps:
+      - name: Checkout immutable release commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare-release.outputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Resolve image metadata
+        id: vars
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ml-docker-orchestrator" >> "${GITHUB_OUTPUT}"
+          echo "revision=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Generate OCI metadata
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.vars.outputs.image }}
+          tags: |
+            type=raw,value=${{ env.RELEASE_TAG }}
+            type=raw,value=latest
+            type=sha
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.vars.outputs.revision }}
+            org.opencontainers.image.version=${{ env.RELEASE_TAG }}
+
+      - name: Build and publish package
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          provenance: true
+          sbom: true
