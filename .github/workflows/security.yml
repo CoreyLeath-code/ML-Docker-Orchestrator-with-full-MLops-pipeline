@@ -1,5 +1,8 @@
 name: Security
-on: [push, pull_request]
+
+on:
+  push:
+  pull_request:
 
 permissions:
   contents: read
@@ -10,16 +13,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Trivy: Container & Dependency Scanning
+
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          # mirror.gcr.io intermittently returns HTTP 403 in hosted runners.
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2
         with:
-          scan-type: 'fs'
-          severity: 'CRITICAL,HIGH'
-      # CodeQL: Deep static analysis of source code
+          scan-type: fs
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: python
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
