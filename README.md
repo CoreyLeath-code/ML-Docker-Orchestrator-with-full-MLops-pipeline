@@ -3,6 +3,7 @@
 [![CI](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/ci.yml)
 [![Security](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/security.yml)
 [![CodeQL](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/codeql.yml)
+[![Release](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/release.yml)
 [![Container Publish](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/cd.yml/badge.svg)](https://github.com/CoreyLeath-code/ML-Docker-Orchestrator-with-full-MLops-pipeline/actions/workflows/cd.yml)
 [![Python](https://img.shields.io/badge/Python-%3E%3D3.10-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![Coverage Gate](https://img.shields.io/badge/coverage%20gate-%E2%89%A580%25-brightgreen)](pyproject.toml)
@@ -323,6 +324,86 @@ Two distinct automation paths exist:
 2. `cd.yml` builds and publishes `ghcr.io/<owner>/ml-docker-orchestrator:<tag>` when a `v*.*.*` tag is pushed.
 
 Promotion work should eventually unify release metadata, immutable image digests, SBOM/provenance, release notes, and verification into one traceable release contract.
+
+---
+
+## Extended Q&A
+
+### Is this a production container orchestrator?
+
+No. It is an MLOps reference platform with real FastAPI, MLflow, Docker, Kubernetes-manifest, CI, and security components. The Streamlit control plane is a simulation and does not issue live Docker or Kubernetes commands. See the [Scope and limitations](#scope-and-limitations) section before representing it as a deployed production system.
+
+### Which application path is canonical?
+
+Use `src/orchestrator/`. It contains the canonical FastAPI application, MLflow model loader, metrics instrumentation, and synthetic training workflow. The `app/` and `model/` directories are legacy PyTorch-serving material and should not be combined with the canonical runtime without an explicit migration plan.
+
+### Which Python version should I use?
+
+The package supports Python 3.10 or newer; CI validates with Python 3.11. For the closest local reproduction of CI, create a fresh Python 3.11 virtual environment and install the development extras:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows PowerShell: .\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
+```
+
+### Why does `/health` succeed while `/predict` returns HTTP 503?
+
+`/health` only establishes that the API process is reachable. `/predict` also needs a reachable MLflow service, a compatible registered model, and the configured model stage. Backend failures are intentionally returned as a sanitized HTTP 503, so the response does not reveal registry credentials, paths, or exception details.
+
+### Does Docker Compose create and promote a model automatically?
+
+No. `infra/docker-compose.yml` starts the API and MLflow services but does not train or promote a model. Start MLflow, run `python -m orchestrator.pipeline.train`, then promote a compatible model in MLflow to the stage selected by the application's configuration before calling `/predict`.
+
+### How can I run the same quality gates as CI?
+
+Run these commands from an activated development environment:
+
+```bash
+ruff check .
+ruff format --check .
+mypy .
+pytest --cov=src --cov-report=term-missing
+```
+
+The configured coverage gate fails below 80%. A passing local result is useful evidence, but the pull-request checks remain the merge authority because they run from the exact pushed commit.
+
+### What does the test suite cover today?
+
+The committed tests cover the API health/configuration behavior, empty or invalid prediction-batch handling, and sanitized model-backend failures. They do not yet provide live MLflow, Docker Compose, Kubernetes, load, or recovery-drill coverage. Those gaps are intentional roadmap items, not claims of end-to-end production validation.
+
+### Why did the Security workflow fail even though CodeQL passed?
+
+The observed failure occurred before scanning: Trivy could not download its vulnerability database from `mirror.gcr.io` because the mirror returned HTTP 403. The workflow now pins Trivy to `v0.36.0` and requests the database from `public.ecr.aws/aquasecurity/trivy-db:2`. This fixes scanner availability without suppressing security findings; HIGH and CRITICAL findings still fail the job.
+
+### What does a green security check prove?
+
+It proves that the configured Trivy, CodeQL, and dependency-review checks executed successfully for that commit. It does not prove the absence of every vulnerability, replace runtime monitoring, or provide an SBOM, provenance attestation, signing policy, or complete supply-chain assurance.
+
+### Why are release jobs skipped on ordinary pushes or pull requests?
+
+That is expected. The repository separates normal CI from release automation. Semantic-release runs on `main`, while the GHCR image publication workflow runs when a semantic `v*.*.*` tag is pushed. A skipped tag-gated job is not a failed release; it means the event was not a release trigger.
+
+### What artifact is currently published?
+
+The release automation is configured to publish a container image to GitHub Container Registry (GHCR), using the `ghcr.io/<owner>/ml-docker-orchestrator:<tag>` naming pattern. It does not currently publish a Python package to PyPI. Before consuming a release, inspect its image digest and verify it is the intended immutable tag.
+
+### Can I apply the Kubernetes manifests directly?
+
+Treat them as deployment templates. First replace the placeholder image with an immutable, tested GHCR digest; create real secrets outside source control; validate the manifests against the target cluster; and confirm the ingress, monitoring, namespace, and NetworkPolicy assumptions. The repository does not yet run an ephemeral-cluster deployment test in CI.
+
+### Where do I find metrics and what do they mean?
+
+The API exposes Prometheus-format metrics at `GET /metrics`, including request count and latency-histogram instrumentation. They show behavior observed by the running process, not a published SLO. There is no committed P95/P99 throughput or latency benchmark artifact, so do not infer performance numbers from the dashboard simulation.
+
+### Is the Streamlit dashboard connected to real infrastructure?
+
+No. `platform_monitor.py` is a visual demonstration of pipeline transitions, node state, fault injection, resource movement, and replica changes. It is useful for communicating an operating model, but it is not live Kubernetes telemetry or an orchestration control plane.
+
+### What should I change before a real production deployment?
+
+At minimum: run the container as a non-root user; add a Docker health check; pin actions by immutable SHA; generate SBOM and provenance; use immutable image digests; add authentication, authorization, input-schema governance, and rate limiting; validate MLflow/Docker/Kubernetes integrations in CI; introduce real data/model-governance evidence; and run benchmark plus recovery-drill tests. The [L6 promotion priorities](#l6-promotion-priorities) provide the ordered roadmap.
 
 ---
 
