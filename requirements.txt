@@ -9,5 +9,5 @@ numpy>=1.26
 pandas>=2.2
 scikit-learn>=1.4
 torch>=2.2
-streamlit>=1.64.0
+streamlit>=1.65.0
 httpx
